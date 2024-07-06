@@ -1,0 +1,30 @@
+services:
+  server-go:
+    build: .
+    ports:
+      - "8087:8080"
+    container_name: burgers-api-server-go
+    env_file: ./.env
+    links:
+      - db
+    depends_on:
+      - db
+    restart: always
+  db:
+    image: postgres
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    restart: always
+    container_name: ${POSTGRES_CONTAINER_NAME}
+    shm_size: 128mb
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: '${POSTGRES_DB}'
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+volumes:
+  pgdata:
