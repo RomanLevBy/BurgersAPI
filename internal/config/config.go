@@ -1,7 +1,8 @@
 package config
 
 import (
-	"log"
+	"errors"
+	"fmt"
 	"os"
 	"time"
 
@@ -27,23 +28,23 @@ type HTTPServer struct {
 	IdleTimeout time.Duration `yaml:"idle_timeout" env-default:"60s"`
 }
 
-func MustLoad() *Config {
+func Load() (*Config, error) {
 	configPath := os.Getenv("CONFIG_PATH")
 
 	if configPath == "" {
-		log.Fatal("CONFIG_PATH is not set")
+		return nil, errors.New("CONFIG_PATH is not set")
 	}
 
 	//check if file exist
 	if _, err := os.Stat(configPath); os.IsNotExist(err) {
-		log.Fatalf("config file %s does not exist", configPath)
+		return nil, errors.New(fmt.Sprintf("config file %s does not exist", configPath))
 	}
 
 	var conf Config
 
 	if err := cleanenv.ReadConfig(configPath, &conf); err != nil {
-		log.Fatalf("Cannot read config file: %s", err)
+		return nil, errors.New(fmt.Sprintf("Cannot read config file: %s", err))
 	}
 
-	return &conf
+	return &conf, nil
 }
