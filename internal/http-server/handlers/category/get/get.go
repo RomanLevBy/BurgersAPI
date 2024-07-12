@@ -43,9 +43,9 @@ func New(log *slog.Logger, categorySaver CategoryProvider) http.HandlerFunc {
 		}
 		id, err := strconv.Atoi(idParam)
 		if err != nil {
-			log.Error("Id is not valid")
+			log.Error("id is not valid")
 
-			render.JSON(w, r, resp.Error("Id is not valid"))
+			render.JSON(w, r, resp.Error("id is not valid"))
 
 			return
 		}
