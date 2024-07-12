@@ -28,7 +28,7 @@ func New(log *slog.Logger, categorySaver CategoryProvider) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		const fn = "handlers.category.get.New"
 
-		log = log.With(
+		log := log.With(
 			slog.String("fn", fn),
 			slog.String("request_id", middleware.GetReqID(r.Context())),
 		)
@@ -50,7 +50,7 @@ func New(log *slog.Logger, categorySaver CategoryProvider) http.HandlerFunc {
 			return
 		}
 
-		category, err := categorySaver.GetCategory(context.Background(), id)
+		category, err := categorySaver.GetCategory(r.Context(), id)
 		if errors.Is(err, iErr.ErrCategoryNotFound) {
 			log.Info("category not found", "id", id)
 

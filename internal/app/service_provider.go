@@ -93,8 +93,6 @@ func (s *serviceProvider) InitCategoryRepository() *categoryRepo.Repository {
 func (s *serviceProvider) InitPostgres() *sql.DB {
 	const fn = "init.postgres-db"
 
-	fmt.Println("config config config")
-
 	if s.postgresDB == nil {
 		postgresDB, err := sql.Open("postgres",
 			fmt.Sprintf("host=%s user=%s dbname=%s sslmode=disable password=%s",
@@ -124,7 +122,10 @@ func (s *serviceProvider) InitServer() *http.Server {
 
 		//TODO: delete
 		router.Get("/", func(w http.ResponseWriter, r *http.Request) {
-			w.Write([]byte("welcome"))
+			_, err := w.Write([]byte("welcome"))
+			if err == nil {
+				return
+			}
 		})
 
 		router.Get("/categories/{id}", get.New(s.logger, s.categoryService))
@@ -138,6 +139,8 @@ func (s *serviceProvider) InitServer() *http.Server {
 			WriteTimeout: s.conf.HTTPServer.Timeout,
 			IdleTimeout:  s.conf.HTTPServer.IdleTimeout,
 		}
+
+		s.logger.Info("server started", slog.String("address", s.conf.Address))
 	}
 
 	return s.server

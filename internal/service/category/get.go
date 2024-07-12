@@ -5,6 +5,7 @@ import (
 	"errors"
 	iErr "github.com/RomanLevBy/BurgersAPI/internal/error"
 	"github.com/RomanLevBy/BurgersAPI/internal/model"
+	"github.com/go-chi/chi/v5/middleware"
 	"log/slog"
 )
 
@@ -24,17 +25,20 @@ func New(repo Repository, logger *slog.Logger) *Service {
 func (s *Service) GetCategory(ctx context.Context, id int) (model.Category, error) {
 	const fn = "service.category.Get"
 
-	s.logger.With(slog.String("fn", fn))
+	log := s.logger.With(
+		slog.String("fn", fn),
+		slog.String("request_id", middleware.GetReqID(ctx)),
+	)
 
 	category, err := s.categoryRepository.GetCategory(ctx, id)
 	if errors.Is(err, iErr.ErrCategoryNotFound) {
-		s.logger.Info("category not found", "id", id)
+		log.Info("category not found", "id", id)
 
 		return model.Category{}, err
 	}
 
 	if err != nil {
-		s.logger.Info("Fail to get category", "id", id)
+		log.Info("fail to get category", "id", id)
 
 		return model.Category{}, err
 	}
