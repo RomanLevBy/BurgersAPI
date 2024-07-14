@@ -52,7 +52,7 @@ func New(log *slog.Logger, burgerProvider BurgerProvider) http.HandlerFunc {
 
 		burger, err := burgerProvider.GetBurger(r.Context(), id)
 		if errors.Is(err, iErr.ErrBurgerNotFound) {
-			log.Info("burger not found", "id", id)
+			log.Info("burger not found", slog.Int("id", id))
 
 			render.JSON(w, r, resp.Error("Not found."))
 

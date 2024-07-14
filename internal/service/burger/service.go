@@ -6,6 +6,7 @@ import (
 	iErr "github.com/RomanLevBy/BurgersAPI/internal/error"
 	"github.com/RomanLevBy/BurgersAPI/internal/lib/logger/sl"
 	"github.com/RomanLevBy/BurgersAPI/internal/model"
+	serviceModel "github.com/RomanLevBy/BurgersAPI/internal/service/burger/model"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/iancoleman/strcase"
 	"log/slog"
@@ -14,7 +15,8 @@ import (
 
 type Repository interface {
 	GetBurger(ctx context.Context, id int) (model.Burger, error)
-	SaveBurger(ctx context.Context, burgerInfo model.BurgerInfo) error
+	SaveBurger(ctx context.Context, burgerInfo serviceModel.BurgerInfo) error
+	GetAllBurgers(ctx context.Context, params serviceModel.FetchParam) ([]model.Burger, error)
 }
 
 type Service struct {
@@ -24,6 +26,30 @@ type Service struct {
 
 func New(repo Repository, logger *slog.Logger) *Service {
 	return &Service{burgerRepository: repo, logger: logger}
+}
+
+func (s *Service) GetAllBurgers(ctx context.Context, params serviceModel.FetchParam) ([]model.Burger, uint64, error) {
+	const fn = "service.burger.GetAllBurgers"
+
+	var nextCursor uint64
+
+	log := s.logger.With(
+		slog.String("fn", fn),
+		slog.String("request_id", middleware.GetReqID(ctx)),
+	)
+
+	burgers, err := s.burgerRepository.GetAllBurgers(ctx, params)
+	if err != nil {
+		log.Info("fail to get burger")
+
+		return nil, nextCursor, err
+	}
+
+	if len(burgers) > 0 {
+		nextCursor = uint64(burgers[len(burgers)-1].ID)
+	}
+
+	return burgers, nextCursor, nil
 }
 
 func (s *Service) GetBurger(ctx context.Context, id int) (model.Burger, error) {
@@ -50,7 +76,7 @@ func (s *Service) GetBurger(ctx context.Context, id int) (model.Burger, error) {
 	return burger, nil
 }
 
-func (s *Service) SaveBurger(ctx context.Context, burgerInfo model.BurgerInfo) error {
+func (s *Service) SaveBurger(ctx context.Context, burgerInfo serviceModel.BurgerInfo) error {
 	const fn = "service.burger.save"
 
 	log := s.logger.With(

@@ -7,7 +7,7 @@ import (
 	iErr "github.com/RomanLevBy/BurgersAPI/internal/error"
 	resp "github.com/RomanLevBy/BurgersAPI/internal/lib/api/response"
 	"github.com/RomanLevBy/BurgersAPI/internal/lib/logger/sl"
-	"github.com/RomanLevBy/BurgersAPI/internal/model"
+	serviceModel "github.com/RomanLevBy/BurgersAPI/internal/service/burger/model"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/render"
 	validator "github.com/go-playground/validator/v10"
@@ -20,7 +20,7 @@ type Response struct {
 }
 
 type BurgerSaver interface {
-	SaveBurger(ctx context.Context, burgerInfo model.BurgerInfo) error
+	SaveBurger(ctx context.Context, burgerInfo serviceModel.BurgerInfo) error
 }
 
 func New(log *slog.Logger, burgerSaver BurgerSaver) http.HandlerFunc {
@@ -32,7 +32,7 @@ func New(log *slog.Logger, burgerSaver BurgerSaver) http.HandlerFunc {
 			slog.String("request_id", middleware.GetReqID(r.Context())),
 		)
 
-		var req model.BurgerRequest
+		var req serviceModel.BurgerRequest
 
 		err := render.DecodeJSON(r.Body, &req)
 		if err != nil {

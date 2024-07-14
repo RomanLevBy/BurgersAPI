@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/RomanLevBy/BurgersAPI/internal/config"
 	getBurger "github.com/RomanLevBy/BurgersAPI/internal/http-server/handlers/burger/get"
+	getAllBurger "github.com/RomanLevBy/BurgersAPI/internal/http-server/handlers/burger/getAll"
 	saveBurger "github.com/RomanLevBy/BurgersAPI/internal/http-server/handlers/burger/save"
 	getCategory "github.com/RomanLevBy/BurgersAPI/internal/http-server/handlers/category/get"
 	burgerRepo "github.com/RomanLevBy/BurgersAPI/internal/repository/burger/postgres"
@@ -160,6 +161,7 @@ func (s *serviceProvider) InitServer() *http.Server {
 		router.Route("/v1", func(router chi.Router) {
 			router.Get("/categories/{id}", getCategory.New(s.logger, s.categoryService))
 
+			router.Get("/burgers", getAllBurger.New(s.logger, s.burgerService))
 			router.Get("/burgers/{id}", getBurger.New(s.logger, s.burgerService))
 			router.Post("/burgers", saveBurger.New(s.logger, s.burgerService))
 		})

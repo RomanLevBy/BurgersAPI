@@ -1,11 +1,11 @@
 package converter
 
 import (
-	"github.com/RomanLevBy/BurgersAPI/internal/model"
+	serviceModel "github.com/RomanLevBy/BurgersAPI/internal/service/burger/model"
 )
 
-func ToBurgerInfoFromRequest(br model.BurgerRequest) model.BurgerInfo {
-	return model.BurgerInfo{
+func ToBurgerInfoFromRequest(br serviceModel.BurgerRequest) serviceModel.BurgerInfo {
+	return serviceModel.BurgerInfo{
 		CategoryId:   br.CategoryId,
 		Title:        br.Title,
 		Instructions: br.Instructions,
