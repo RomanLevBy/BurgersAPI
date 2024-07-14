@@ -36,6 +36,7 @@ func (s *Service) GetAllBurgers(ctx context.Context, params serviceModel.FetchPa
 	log := s.logger.With(
 		slog.String("fn", fn),
 		slog.String("request_id", middleware.GetReqID(ctx)),
+		"params", params,
 	)
 
 	burgers, err := s.burgerRepository.GetAllBurgers(ctx, params)

@@ -46,7 +46,7 @@ func (r *Repository) GetAllBurgers(ctx context.Context, params serviceModel.Fetc
 	}
 
 	if params.TitlePAth != "" {
-		queryBuilder = queryBuilder.Where("title LIKE ?", fmt.Sprintf("%s%", params.TitlePAth))
+		queryBuilder = queryBuilder.Where("title LIKE ?", fmt.Sprintf("%s%%", params.TitlePAth))
 	}
 
 	query, args, err := queryBuilder.ToSql()

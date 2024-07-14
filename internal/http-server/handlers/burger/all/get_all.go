@@ -1,4 +1,4 @@
-package get
+package all
 
 import (
 	"context"
@@ -30,7 +30,7 @@ type BurgersProvider interface {
 
 func New(log *slog.Logger, burgersProvider BurgersProvider) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		const fn = "handlers.burger.getAll.New"
+		const fn = "handlers.burger.all.New"
 
 		log := log.With(
 			slog.String("fn", fn),
