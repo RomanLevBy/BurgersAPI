@@ -17,16 +17,16 @@ import (
 
 type Response struct {
 	resp.Response
-	Burger model.Burger `json:"burger,required"`
+	Ingredient model.Ingredient `json:"ingredient,required"`
 }
 
-type BurgerProvider interface {
-	GetBurger(ctx context.Context, id int) (model.Burger, error)
+type IngredientProvider interface {
+	GetIngredient(ctx context.Context, id int) (model.Ingredient, error)
 }
 
-func New(log *slog.Logger, burgerProvider BurgerProvider) http.HandlerFunc {
+func New(log *slog.Logger, burgerProvider IngredientProvider) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		const fn = "handlers.burger.get.New"
+		const fn = "handlers.ingredient.get.New"
 
 		log := log.With(
 			slog.String("fn", fn),
@@ -50,9 +50,9 @@ func New(log *slog.Logger, burgerProvider BurgerProvider) http.HandlerFunc {
 			return
 		}
 
-		burger, err := burgerProvider.GetBurger(r.Context(), id)
-		if errors.Is(err, iErr.ErrBurgerNotFound) {
-			log.Info("burger not found", slog.Int("id", id))
+		ingredient, err := burgerProvider.GetIngredient(r.Context(), id)
+		if errors.Is(err, iErr.ErrIngredientNotFound) {
+			log.Info("ingredient not found", slog.Int("id", id))
 
 			render.JSON(w, r, resp.Error("Not found."))
 
@@ -60,18 +60,18 @@ func New(log *slog.Logger, burgerProvider BurgerProvider) http.HandlerFunc {
 		}
 
 		if err != nil {
-			log.Info("fail to get burger", slog.String("id", idParam), sl.Err(err))
+			log.Info("fail to get ingredient", slog.String("id", idParam), sl.Err(err))
 
-			render.JSON(w, r, resp.Error("Fail to get burger."))
+			render.JSON(w, r, resp.Error("Fail to get ingredient."))
 
 			return
 		}
 
-		log.Info("burger found", slog.String("burger", idParam), "burger", burger)
+		log.Info("ingredient found", slog.String("ingredient", idParam), "ingredient", ingredient)
 
 		render.JSON(w, r, Response{
-			Response: resp.OK(),
-			Burger:   burger,
+			Response:   resp.OK(),
+			Ingredient: ingredient,
 		})
 	}
 }
