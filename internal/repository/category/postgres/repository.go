@@ -23,7 +23,7 @@ func (r *Repository) GetCategory(ctx context.Context, id int) (model.Category, e
 
 	var category model.Category
 
-	stmt, err := r.db.Prepare("SELECT id, handler, title FROM categories WHERE id = $1")
+	stmt, err := r.db.Prepare("SELECT id, handle, title FROM categories WHERE id = $1")
 	if err != nil {
 		return category, fmt.Errorf("%s, %w", fn, err)
 	}
@@ -33,7 +33,7 @@ func (r *Repository) GetCategory(ctx context.Context, id int) (model.Category, e
 		}
 	}(stmt)
 
-	err = stmt.QueryRowContext(ctx, id).Scan(&category.ID, &category.Handler, &category.Title)
+	err = stmt.QueryRowContext(ctx, id).Scan(&category.ID, &category.Handle, &category.Title)
 
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {

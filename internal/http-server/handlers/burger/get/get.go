@@ -17,16 +17,16 @@ import (
 
 type Response struct {
 	resp.Response
-	Category model.Category `json:"category,required"`
+	Burger model.Burger `json:"burger,required"`
 }
 
-type CategoryProvider interface {
-	GetCategory(ctx context.Context, id int) (model.Category, error)
+type BurgerProvider interface {
+	GetBurger(ctx context.Context, id int) (model.Burger, error)
 }
 
-func New(log *slog.Logger, categorySaver CategoryProvider) http.HandlerFunc {
+func New(log *slog.Logger, burgerProvider BurgerProvider) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		const fn = "handlers.category.get.New"
+		const fn = "handlers.burger.get.New"
 
 		log := log.With(
 			slog.String("fn", fn),
@@ -45,14 +45,14 @@ func New(log *slog.Logger, categorySaver CategoryProvider) http.HandlerFunc {
 		if err != nil {
 			log.Error("id is not valid")
 
-			render.JSON(w, r, resp.Error("Id is not valid."))
+			render.JSON(w, r, resp.Error("id is not valid."))
 
 			return
 		}
 
-		category, err := categorySaver.GetCategory(r.Context(), id)
-		if errors.Is(err, iErr.ErrCategoryNotFound) {
-			log.Info("category not found", "id", id)
+		burger, err := burgerProvider.GetBurger(r.Context(), id)
+		if errors.Is(err, iErr.ErrBurgerNotFound) {
+			log.Info("burger not found", slog.Int("id", id))
 
 			render.JSON(w, r, resp.Error("Not found."))
 
@@ -60,18 +60,18 @@ func New(log *slog.Logger, categorySaver CategoryProvider) http.HandlerFunc {
 		}
 
 		if err != nil {
-			log.Info("fail to get category", slog.String("id", idParam), sl.Err(err))
+			log.Info("fail to get burger", slog.String("id", idParam), sl.Err(err))
 
-			render.JSON(w, r, resp.Error("Fail to get category."))
+			render.JSON(w, r, resp.Error("Fail to get burger."))
 
 			return
 		}
 
-		log.Info("category found", slog.String("category", idParam))
+		log.Info("burger found", slog.String("burger", idParam), "burger", burger)
 
 		render.JSON(w, r, Response{
 			Response: resp.OK(),
-			Category: category,
+			Burger:   burger,
 		})
 	}
 }
