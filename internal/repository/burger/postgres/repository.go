@@ -31,11 +31,14 @@ func (r *Repository) GetAllBurgers(ctx context.Context, params serviceModel.Fetc
 			"burgers.id",
 			"burgers.handle",
 			"burgers.title",
+			"c.title",
 			"instructions",
 			"video",
 			"data_modified",
 		).
 		From("burgers").
+		Join("categories as c ON c.id = burgers.category_id").
+		OrderBy("burgers.id").
 		PlaceholderFormat(sq.Dollar)
 
 	if params.Limit > 0 {
@@ -58,11 +61,11 @@ func (r *Repository) GetAllBurgers(ctx context.Context, params serviceModel.Fetc
 		queryBuilder = queryBuilder.Where("burgers.title LIKE ?", fmt.Sprintf("%s%%", params.TitlePath))
 	}
 
-	if params.TitlePath == "" {
-		queryBuilder = queryBuilder.Join("burgers_ingredients as bi ON burgers.id = bi.burger_id")
-		queryBuilder = queryBuilder.Join("ingredients ON bi.ingredient_id = ingredients.id")
-		queryBuilder = queryBuilder.Where("ingredients.title LIKE ?", fmt.Sprintf("%s%%", "test"))
-	}
+	//if params.TitlePath == "" {
+	//	queryBuilder = queryBuilder.Join("burgers_ingredients as bi ON burgers.id = bi.burger_id")
+	//	queryBuilder = queryBuilder.Join("ingredients ON bi.ingredient_id = ingredients.id")
+	//	queryBuilder = queryBuilder.Where("ingredients.title LIKE ?", fmt.Sprintf("%s%%", "test"))
+	//}
 
 	query, args, err := queryBuilder.ToSql()
 	if err != nil {
@@ -87,8 +90,9 @@ func (r *Repository) GetAllBurgers(ctx context.Context, params serviceModel.Fetc
 		var burger model.Burger
 		if err := rows.Scan(
 			&burger.ID,
-			&burger.Title,
 			&burger.Handle,
+			&burger.Title,
+			&burger.Category,
 			&burger.Instructions,
 			&burger.Video,
 			&burger.DataModified,
@@ -106,7 +110,29 @@ func (r *Repository) GetBurger(ctx context.Context, id int) (model.Burger, error
 
 	var burger model.Burger
 
-	stmt, err := r.db.Prepare("SELECT id, handle, title, instructions, video, data_modified FROM burgers WHERE id = $1")
+	queryBuilder := sq.
+		Select(
+			"burgers.id",
+			"burgers.handle",
+			"burgers.title",
+			"c.title",
+			"instructions",
+			"video",
+			"data_modified",
+		).
+		From("burgers").
+		Join("categories as c ON c.id = burgers.category_id").
+		Where(sq.Eq{
+			"burgers.id": id,
+		}).
+		PlaceholderFormat(sq.Dollar)
+
+	query, args, err := queryBuilder.ToSql()
+	if err != nil {
+		return burger, fmt.Errorf("%s, %w", fn, err)
+	}
+
+	stmt, err := r.db.Prepare(query)
 	if err != nil {
 		return burger, fmt.Errorf("%s, %w", fn, err)
 	}
@@ -116,10 +142,11 @@ func (r *Repository) GetBurger(ctx context.Context, id int) (model.Burger, error
 		}
 	}(stmt)
 
-	err = stmt.QueryRowContext(ctx, id).Scan(
+	err = stmt.QueryRowContext(ctx, args...).Scan(
 		&burger.ID,
 		&burger.Handle,
 		&burger.Title,
+		&burger.Category,
 		&burger.Instructions,
 		&burger.Video,
 		&burger.DataModified,

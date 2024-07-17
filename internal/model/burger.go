@@ -2,7 +2,7 @@ package model
 
 type Burger struct {
 	ID           int    `json:"id"`
-	CategoryId   int    `json:"category_id"`
+	Category     string `json:"category"`
 	Handle       string `json:"handler"`
 	Title        string `json:"title"`
 	Instructions string `json:"instructions"`
