@@ -9,4 +9,5 @@ type BurgerInfo struct {
 	Instructions string
 	Video        string
 	DataModified time.Time
+	Ingredients  []BurgerIngredientInfo
 }

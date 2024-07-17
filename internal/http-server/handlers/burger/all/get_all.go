@@ -74,7 +74,7 @@ func New(log *slog.Logger, burgersProvider BurgersProvider) http.HandlerFunc {
 
 		params := serviceModel.FetchParam{
 			Title:     title,
-			TitlePAth: titlePath,
+			TitlePath: titlePath,
 			Limit:     uint64(limit),
 			CursorID:  uint64(cursor),
 		}

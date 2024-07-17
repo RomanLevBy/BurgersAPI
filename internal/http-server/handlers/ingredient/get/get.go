@@ -35,7 +35,7 @@ func New(log *slog.Logger, burgerProvider IngredientProvider) http.HandlerFunc {
 
 		idParam := chi.URLParam(r, "id")
 		if idParam == "" {
-			log.Error("Id is empty")
+			log.Error("id is empty")
 
 			render.JSON(w, r, resp.Error("Id is empty."))
 

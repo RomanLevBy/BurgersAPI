@@ -13,5 +13,5 @@ INSERT INTO ingredients (handle, title, description) VALUES ('other-unknown', 'O
 
 -- +goose Down
 -- +goose StatementBegin
-SELECT 'down SQL query';
+DROP TABLE ingredients
 -- +goose StatementEnd

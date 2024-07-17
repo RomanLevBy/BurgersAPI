@@ -79,9 +79,9 @@ func (s *serviceProvider) InitLogger() *slog.Logger {
 				slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo}),
 			)
 		}
-	}
 
-	s.logger.Debug("Debug logging enabled")
+		s.logger.Debug("Debug logging enabled")
+	}
 
 	return s.logger
 }
@@ -111,6 +111,7 @@ func (s *serviceProvider) InitBurgerService() *burgerService.Service {
 	if s.burgerService == nil {
 		s.burgerService = burgerService.New(
 			s.InitBurgerRepository(),
+			s.InitIngredientService(),
 			s.InitLogger(),
 		)
 	}

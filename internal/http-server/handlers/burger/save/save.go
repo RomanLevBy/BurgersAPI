@@ -10,7 +10,7 @@ import (
 	serviceModel "github.com/RomanLevBy/BurgersAPI/internal/service/burger/model"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/render"
-	validator "github.com/go-playground/validator/v10"
+	"github.com/go-playground/validator/v10"
 	"log/slog"
 	"net/http"
 )
@@ -36,9 +36,9 @@ func New(log *slog.Logger, burgerSaver BurgerSaver) http.HandlerFunc {
 
 		err := render.DecodeJSON(r.Body, &req)
 		if err != nil {
-			log.Error("Failed to decode request body", sl.Err(err))
+			log.Error("failed to decode request body", sl.Err(err))
 
-			render.JSON(w, r, resp.Error("Failed to decode request."))
+			render.JSON(w, r, resp.Error("Invalid request data."))
 
 			return
 		}
@@ -49,7 +49,7 @@ func New(log *slog.Logger, burgerSaver BurgerSaver) http.HandlerFunc {
 			var validateErr validator.ValidationErrors
 			errors.As(err, &validateErr)
 
-			log.Error("Invalid request", sl.Err(err))
+			log.Error("invalid request", sl.Err(err))
 
 			render.JSON(w, r, resp.ValidationError(validateErr))
 
@@ -62,6 +62,14 @@ func New(log *slog.Logger, burgerSaver BurgerSaver) http.HandlerFunc {
 			log.Info("burger already exists", "burgerInfo", burgerInfo)
 
 			render.JSON(w, r, resp.Error("Burger already exists."))
+
+			return
+		}
+
+		if errors.Is(err, iErr.ErrIngredientNotFound) {
+			log.Info("ingredient not fount", "burgerInfo", burgerInfo)
+
+			render.JSON(w, r, resp.Error("Invalid ingredient."))
 
 			return
 		}
