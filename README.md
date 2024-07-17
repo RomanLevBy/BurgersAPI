@@ -87,7 +87,7 @@ Example of response
 
 ### 3. Save burgers
 ```http
-GET /v1/burgers
+POST /v1/burgers
 ```
 
 This is a POST request, submitting data to an API via the request body to save burger.
