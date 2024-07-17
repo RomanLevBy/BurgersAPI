@@ -19,13 +19,18 @@ type Repository interface {
 	GetAllBurgers(ctx context.Context, params serviceModel.FetchParam) ([]model.Burger, error)
 }
 
+type IngredientServer interface {
+	GetIngredient(ctx context.Context, id int) (model.Ingredient, error)
+}
+
 type Service struct {
 	logger           *slog.Logger
+	ingredientServer IngredientServer
 	burgerRepository Repository
 }
 
-func New(repo Repository, logger *slog.Logger) *Service {
-	return &Service{burgerRepository: repo, logger: logger}
+func New(repo Repository, ingredientServer IngredientServer, logger *slog.Logger) *Service {
+	return &Service{burgerRepository: repo, ingredientServer: ingredientServer, logger: logger}
 }
 
 func (s *Service) GetAllBurgers(ctx context.Context, params serviceModel.FetchParam) ([]model.Burger, uint64, error) {
@@ -84,6 +89,15 @@ func (s *Service) SaveBurger(ctx context.Context, burgerInfo serviceModel.Burger
 		slog.String("fn", fn),
 		slog.String("request_id", middleware.GetReqID(ctx)),
 	)
+
+	for _, ingredient := range burgerInfo.Ingredients {
+		_, err := s.ingredientServer.GetIngredient(ctx, ingredient.IngredientId)
+		if err != nil {
+			log.Error("fail to get ingredient", sl.Err(err), "ingredient", ingredient)
+
+			return err
+		}
+	}
 
 	burgerInfo.Handle = strcase.ToKebab(burgerInfo.Title)
 	burgerInfo.DataModified = time.Now()

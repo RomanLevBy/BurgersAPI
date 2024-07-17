@@ -9,10 +9,14 @@ import (
 	getBurger "github.com/RomanLevBy/BurgersAPI/internal/http-server/handlers/burger/get"
 	saveBurger "github.com/RomanLevBy/BurgersAPI/internal/http-server/handlers/burger/save"
 	getCategory "github.com/RomanLevBy/BurgersAPI/internal/http-server/handlers/category/get"
+	getAllIngredients "github.com/RomanLevBy/BurgersAPI/internal/http-server/handlers/ingredient/all"
+	getIngredient "github.com/RomanLevBy/BurgersAPI/internal/http-server/handlers/ingredient/get"
 	burgerRepo "github.com/RomanLevBy/BurgersAPI/internal/repository/burger/postgres"
 	categoryRepo "github.com/RomanLevBy/BurgersAPI/internal/repository/category/postgres"
+	ingredientRepo "github.com/RomanLevBy/BurgersAPI/internal/repository/ingredient/postgres"
 	burgerService "github.com/RomanLevBy/BurgersAPI/internal/service/burger"
 	categoryService "github.com/RomanLevBy/BurgersAPI/internal/service/category"
+	ingredientService "github.com/RomanLevBy/BurgersAPI/internal/service/ingredient"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	_ "github.com/lib/pq"
@@ -39,6 +43,9 @@ type serviceProvider struct {
 
 	burgerService *burgerService.Service
 	burgerRepo    *burgerRepo.Repository
+
+	ingredientService *ingredientService.Service
+	ingredientRepo    *ingredientRepo.Repository
 }
 
 func newServiceProvider(ctx context.Context, config *config.Config) *serviceProvider {
@@ -48,6 +55,7 @@ func newServiceProvider(ctx context.Context, config *config.Config) *serviceProv
 	provider.InitLogger()
 	provider.InitCategoryService()
 	provider.InitBurgerService()
+	provider.InitIngredientService()
 	provider.InitServer()
 
 	_ = ctx //todo delete context or use for init databases?
@@ -71,9 +79,9 @@ func (s *serviceProvider) InitLogger() *slog.Logger {
 				slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo}),
 			)
 		}
-	}
 
-	s.logger.Debug("Debug logging enabled")
+		s.logger.Debug("Debug logging enabled")
+	}
 
 	return s.logger
 }
@@ -103,6 +111,7 @@ func (s *serviceProvider) InitBurgerService() *burgerService.Service {
 	if s.burgerService == nil {
 		s.burgerService = burgerService.New(
 			s.InitBurgerRepository(),
+			s.InitIngredientService(),
 			s.InitLogger(),
 		)
 	}
@@ -118,6 +127,27 @@ func (s *serviceProvider) InitBurgerRepository() *burgerRepo.Repository {
 	}
 
 	return s.burgerRepo
+}
+
+func (s *serviceProvider) InitIngredientService() *ingredientService.Service {
+	if s.ingredientService == nil {
+		s.ingredientService = ingredientService.New(
+			s.InitIngredientRepository(),
+			s.InitLogger(),
+		)
+	}
+
+	return s.ingredientService
+}
+
+func (s *serviceProvider) InitIngredientRepository() *ingredientRepo.Repository {
+	if s.ingredientRepo == nil {
+		s.ingredientRepo = ingredientRepo.New(
+			s.InitPostgres(),
+		)
+	}
+
+	return s.ingredientRepo
 }
 
 func (s *serviceProvider) InitPostgres() *sql.DB {
@@ -150,20 +180,15 @@ func (s *serviceProvider) InitServer() *http.Server {
 		router.Use(middleware.Recoverer)
 		router.Use(middleware.URLFormat)
 
-		//TODO: delete
-		router.Get("/", func(w http.ResponseWriter, r *http.Request) {
-			_, err := w.Write([]byte("welcome"))
-			if err == nil {
-				return
-			}
-		})
-
 		router.Route("/v1", func(router chi.Router) {
 			router.Get("/categories/{id}", getCategory.New(s.logger, s.categoryService))
 
 			router.Get("/burgers", getAllBurger.New(s.logger, s.burgerService))
 			router.Get("/burgers/{id}", getBurger.New(s.logger, s.burgerService))
 			router.Post("/burgers", saveBurger.New(s.logger, s.burgerService))
+
+			router.Get("/ingredients", getAllIngredients.New(s.logger, s.ingredientService))
+			router.Get("/ingredient/{id}", getIngredient.New(s.logger, s.ingredientService))
 		})
 
 		s.logger.Info("starting server", slog.String("address", s.conf.Address))

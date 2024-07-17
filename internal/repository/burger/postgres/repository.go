@@ -26,8 +26,17 @@ func (r *Repository) GetAllBurgers(ctx context.Context, params serviceModel.Fetc
 
 	var burgers = make([]model.Burger, 0)
 
-	queryBuilder := sq.Select("id", "handle", "title", "instructions", "video", "data_modified").
-		From("burgers").PlaceholderFormat(sq.Dollar)
+	queryBuilder := sq.
+		Select(
+			"burgers.id",
+			"burgers.handle",
+			"burgers.title",
+			"instructions",
+			"video",
+			"data_modified",
+		).
+		From("burgers").
+		PlaceholderFormat(sq.Dollar)
 
 	if params.Limit > 0 {
 		queryBuilder = queryBuilder.Limit(params.Limit)
@@ -45,8 +54,14 @@ func (r *Repository) GetAllBurgers(ctx context.Context, params serviceModel.Fetc
 		})
 	}
 
-	if params.TitlePAth != "" {
-		queryBuilder = queryBuilder.Where("title LIKE ?", fmt.Sprintf("%s%%", params.TitlePAth))
+	if params.TitlePath != "" {
+		queryBuilder = queryBuilder.Where("burgers.title LIKE ?", fmt.Sprintf("%s%%", params.TitlePath))
+	}
+
+	if params.TitlePath == "" {
+		queryBuilder = queryBuilder.Join("burgers_ingredients as bi ON burgers.id = bi.burger_id")
+		queryBuilder = queryBuilder.Join("ingredients ON bi.ingredient_id = ingredients.id")
+		queryBuilder = queryBuilder.Where("ingredients.title LIKE ?", fmt.Sprintf("%s%%", "test"))
 	}
 
 	query, args, err := queryBuilder.ToSql()
@@ -124,14 +139,32 @@ func (r *Repository) GetBurger(ctx context.Context, id int) (model.Burger, error
 func (r *Repository) SaveBurger(ctx context.Context, burgerInfo serviceModel.BurgerInfo) error {
 	const fn = "repository.postgres.SaveBurger"
 
-	stmt, err := r.db.Prepare(
-		"INSERT INTO burgers (category_id, title, handle, instructions, video, data_modified) VALUES ($1, $2, $3, $4, $5, $6);",
+	tx, err := r.db.BeginTx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("%s, %w", fn, err)
+	}
+	// Defer a rollback in case anything fails.
+	defer func(tx *sql.Tx) {
+		err := tx.Rollback()
+		if err != nil {
+		}
+	}(tx)
+
+	stmt, err := tx.Prepare(
+		"INSERT INTO burgers (category_id, title, handle, instructions, video, data_modified) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id;",
 	)
+	defer func(stmt *sql.Stmt) {
+		err := stmt.Close()
+		if err != nil {
+		}
+	}(stmt)
+
 	if err != nil {
 		return fmt.Errorf("%s, %w", fn, err)
 	}
 
-	_, err = stmt.ExecContext(
+	var lastInsertId int64
+	err = stmt.QueryRowContext(
 		ctx,
 		burgerInfo.CategoryId,
 		burgerInfo.Title,
@@ -139,7 +172,7 @@ func (r *Repository) SaveBurger(ctx context.Context, burgerInfo serviceModel.Bur
 		burgerInfo.Instructions,
 		burgerInfo.Video,
 		burgerInfo.DataModified,
-	)
+	).Scan(&lastInsertId)
 	if err != nil {
 		var pgErr *pq.Error
 		ok := errors.As(err, &pgErr)
@@ -149,6 +182,36 @@ func (r *Repository) SaveBurger(ctx context.Context, burgerInfo serviceModel.Bur
 			}
 		}
 
+		return fmt.Errorf("%s, %w", fn, err)
+	}
+
+	stmt, err = tx.Prepare(
+		"INSERT INTO burgers_ingredients (burger_id, ingredient_id, instruction) VALUES ($1, $2, $3);",
+	)
+	defer func(stmt *sql.Stmt) {
+		err := stmt.Close()
+		if err != nil {
+		}
+	}(stmt)
+
+	if err != nil {
+		return fmt.Errorf("%s, %w", fn, err)
+	}
+
+	for _, ingredient := range burgerInfo.Ingredients {
+		_, err = stmt.ExecContext(
+			ctx,
+			lastInsertId,
+			ingredient.IngredientId,
+			ingredient.Instruction,
+		)
+		if err != nil {
+			return fmt.Errorf("%s, %w", fn, err)
+		}
+	}
+
+	// Commit the transaction.
+	if err = tx.Commit(); err != nil {
 		return fmt.Errorf("%s, %w", fn, err)
 	}
 
